@@ -1,5 +1,5 @@
 import { Menu } from "antd";
-import { MenuProps } from "antd/lib/menu";
+import type { MenuProps } from "antd";
 import React, { useEffect, useState } from "react";
 import {
   ComponentProps,
@@ -18,32 +18,17 @@ Object.keys(AllIcons).forEach((key) => {
 });
 
 
-interface MenuItem {
-  key: string;
-  label: string | null;
-  icon?: React.ReactNode;
-  children?: MenuItem[];
-  type?: "group" | "divider" | "text" | null;  // added "text" type
-  disabled?: boolean;
-}
+type MenuItem = Required<MenuProps>['items'][number];
 
 
 function parseMenuItems(data: any[], iconSize: string, iconMinWidth: string): MenuItem[] {
   return data.map((item: any) => {
-    const menuItem: MenuItem = {
-      key: item.key,
-      label: item.label === null ? null : "",
-      icon: undefined,
-      children: item.children ? parseMenuItems(item.children, iconSize, iconMinWidth) : undefined,
-      type: item.type || undefined,
-      disabled: item.disabled ? true : false,
-    };
-
+    // Build icon element
+    let icon: React.ReactNode = undefined;
     if (item.icon) {
       try {
         if (item.icon.startsWith('fa-')) {
-          // If the icon is a FontAwesome icon, create an <i> tag
-          menuItem.icon = (
+          icon = (
             <div style={{ minWidth: iconMinWidth, display: 'flex', alignItems: 'center' }}>
               <i className={`fa ${item.icon}`} style={{ fontSize: iconSize }} />
             </div>
@@ -51,11 +36,9 @@ function parseMenuItems(data: any[], iconSize: string, iconMinWidth: string): Me
         } else {
           const Icon = Icons[item.icon];
           if (Icon) {
-            menuItem.icon = (
+            icon = (
               <div style={{ minWidth: iconMinWidth, display: 'flex', alignItems: 'center' }}>
-                {React.createElement(Icon, {
-                  style: { fontSize: iconSize }
-                })}
+                {React.createElement(Icon, { style: { fontSize: iconSize } })}
               </div>
             );
           }
@@ -65,19 +48,40 @@ function parseMenuItems(data: any[], iconSize: string, iconMinWidth: string): Me
       }
     }
 
-    if (item.label && item.label !== null) {
-      if (item.label.match(/<(.*?)>/)) {
-        menuItem.label = (
-          <span
-            dangerouslySetInnerHTML={{ __html: item.label }}
-          ></span>
-        ) as unknown as string;
-      } else {
-        menuItem.label = item.label as string;
-      }
+    // Build label element
+    let label: React.ReactNode = item.label;
+    if (item.label && typeof item.label === 'string' && item.label.match(/<(.*?)>/)) {
+      label = <span dangerouslySetInnerHTML={{ __html: item.label }} />;
     }
 
-    return menuItem;
+    // Handle divider type
+    if (item.type === 'divider') {
+      return { type: 'divider' as const, key: item.key || Math.random().toString() };
+    }
+
+    // Handle group type
+    if (item.type === 'group') {
+      return {
+        type: 'group' as const,
+        key: item.key,
+        label,
+        children: item.children ? parseMenuItems(item.children, iconSize, iconMinWidth) : [],
+      };
+    }
+
+    // Regular item or submenu
+    const result: any = {
+      key: item.key,
+      label,
+      icon,
+      disabled: item.disabled ? true : false,
+    };
+
+    if (item.children) {
+      result.children = parseMenuItems(item.children, iconSize, iconMinWidth);
+    }
+
+    return result as MenuItem;
   });
 }
 
