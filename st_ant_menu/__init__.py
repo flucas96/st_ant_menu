@@ -53,7 +53,7 @@ def validate_menu_data(menu_data):
             raise ValueError("The 'disabled' field must be a boolean")
 
 
-def st_ant_menu(menu_data = None, key="first_menu", defaultValue=[], defaultSelectedKeys=[], defaultOpenKeys=[], additionalHeight=0, multiple=False, css_styling_menu=None,
+def st_ant_menu(menu_data = None, key="first_menu", defaultValue=[], defaultSelectedKeys=[], defaultOpenKeys=[], additionalHeight=0, multiple=False, css_styling=None, css_styling_menu=None,
                  generall_css_styling=None, theme="light",menu_click=False, iconSize=15, modus = "inline", inlineIndent=24, close_auto=True, custom_font_awesome_url = "https://kit.fontawesome.com/c7cbba6207.js",
                  iconMinWidth=20,return_value=True) :
     """
@@ -91,8 +91,9 @@ def st_ant_menu(menu_data = None, key="first_menu", defaultValue=[], defaultSele
 
     :return: The value of the component.
     """
-    # if menu_data is not None:
-    #     validate_menu_data(menu_data)
+    # css_styling is an alias for css_styling_menu (fixes #2)
+    if css_styling is not None and css_styling_menu is None:
+        css_styling_menu = css_styling
 
     # Call the component function with the given parameters.
     component_value = _component_func(
